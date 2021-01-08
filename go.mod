@@ -1,11 +1,13 @@
 module github.com/micro/go-micro/v2
 
-go 1.13
+go 1.15
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.8
 
 require (
 	github.com/bitly/go-simplejson v0.5.0
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	// github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/ef-ds/deque v1.0.4-0.20190904040645-54cb57c252a1
 	github.com/evanphx/json-patch/v5 v5.0.0
 	github.com/fsnotify/fsnotify v1.4.9
@@ -20,7 +22,6 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/hpcloud/tail v1.0.0
 	github.com/imdario/mergo v0.3.9
-	github.com/lucas-clemente/quic-go v0.19.3
 	github.com/micro/cli/v2 v2.1.2
 	github.com/miekg/dns v1.1.27
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
@@ -30,4 +31,6 @@ require (
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
+	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299 // indirect
+	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

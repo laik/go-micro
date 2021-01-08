@@ -1,190 +1,180 @@
 package transport
 
-import (
-	"context"
-	"crypto/tls"
-	"encoding/gob"
-	"time"
+// type quicSocket struct {
+// 	s   quic.Session
+// 	st  quic.Stream
+// 	enc *gob.Encoder
+// 	dec *gob.Decoder
+// }
 
-	quic "github.com/lucas-clemente/quic-go"
-	utls "github.com/micro/go-micro/v2/util/tls"
-)
+// type quicTransport struct {
+// 	opts Options
+// }
 
-type quicSocket struct {
-	s   quic.Session
-	st  quic.Stream
-	enc *gob.Encoder
-	dec *gob.Decoder
-}
+// type quicClient struct {
+// 	*quicSocket
+// 	t    *quicTransport
+// 	opts DialOptions
+// }
 
-type quicTransport struct {
-	opts Options
-}
+// type quicListener struct {
+// 	l    quic.Listener
+// 	t    *quicTransport
+// 	opts ListenOptions
+// }
 
-type quicClient struct {
-	*quicSocket
-	t    *quicTransport
-	opts DialOptions
-}
+// func (q *quicClient) Close() error {
+// 	return q.quicSocket.st.Close()
+// }
 
-type quicListener struct {
-	l    quic.Listener
-	t    *quicTransport
-	opts ListenOptions
-}
+// func (q *quicSocket) Recv(m *Message) error {
+// 	return q.dec.Decode(&m)
+// }
 
-func (q *quicClient) Close() error {
-	return q.quicSocket.st.Close()
-}
+// func (q *quicSocket) Send(m *Message) error {
+// 	// set the write deadline
+// 	q.st.SetWriteDeadline(time.Now().Add(time.Second * 10))
+// 	// send the data
+// 	return q.enc.Encode(m)
+// }
 
-func (q *quicSocket) Recv(m *Message) error {
-	return q.dec.Decode(&m)
-}
+// func (q *quicSocket) Close() error {
+// 	return q.s.CloseWithError(0, "EOF")
+// }
 
-func (q *quicSocket) Send(m *Message) error {
-	// set the write deadline
-	q.st.SetWriteDeadline(time.Now().Add(time.Second * 10))
-	// send the data
-	return q.enc.Encode(m)
-}
+// func (q *quicSocket) Local() string {
+// 	return q.s.LocalAddr().String()
+// }
 
-func (q *quicSocket) Close() error {
-	return q.s.CloseWithError(0, "EOF")
-}
+// func (q *quicSocket) Remote() string {
+// 	return q.s.RemoteAddr().String()
+// }
 
-func (q *quicSocket) Local() string {
-	return q.s.LocalAddr().String()
-}
+// func (q *quicListener) Addr() string {
+// 	return q.l.Addr().String()
+// }
 
-func (q *quicSocket) Remote() string {
-	return q.s.RemoteAddr().String()
-}
+// func (q *quicListener) Close() error {
+// 	return q.l.Close()
+// }
 
-func (q *quicListener) Addr() string {
-	return q.l.Addr().String()
-}
+// func (q *quicListener) Accept(fn func(Socket)) error {
+// 	for {
+// 		s, err := q.l.Accept(context.TODO())
+// 		if err != nil {
+// 			return err
+// 		}
 
-func (q *quicListener) Close() error {
-	return q.l.Close()
-}
+// 		stream, err := s.AcceptStream(context.TODO())
+// 		if err != nil {
+// 			continue
+// 		}
 
-func (q *quicListener) Accept(fn func(Socket)) error {
-	for {
-		s, err := q.l.Accept(context.TODO())
-		if err != nil {
-			return err
-		}
+// 		go func() {
+// 			fn(&quicSocket{
+// 				s:   s,
+// 				st:  stream,
+// 				enc: gob.NewEncoder(stream),
+// 				dec: gob.NewDecoder(stream),
+// 			})
+// 		}()
+// 	}
+// }
 
-		stream, err := s.AcceptStream(context.TODO())
-		if err != nil {
-			continue
-		}
+// func (q *quicTransport) Init(opts ...Option) error {
+// 	for _, o := range opts {
+// 		o(&q.opts)
+// 	}
+// 	return nil
+// }
 
-		go func() {
-			fn(&quicSocket{
-				s:   s,
-				st:  stream,
-				enc: gob.NewEncoder(stream),
-				dec: gob.NewDecoder(stream),
-			})
-		}()
-	}
-}
+// func (q *quicTransport) Options() Options {
+// 	return q.opts
+// }
 
-func (q *quicTransport) Init(opts ...Option) error {
-	for _, o := range opts {
-		o(&q.opts)
-	}
-	return nil
-}
+// func (q *quicTransport) Dial(addr string, opts ...DialOption) (Client, error) {
+// 	var options DialOptions
+// 	for _, o := range opts {
+// 		o(&options)
+// 	}
 
-func (q *quicTransport) Options() Options {
-	return q.opts
-}
+// 	config := q.opts.TLSConfig
+// 	if config == nil {
+// 		config = &tls.Config{
+// 			InsecureSkipVerify: true,
+// 			NextProtos:         []string{"http/1.1"},
+// 		}
+// 	}
+// 	s, err := quic.DialAddr(addr, config, &quic.Config{
+// 		MaxIdleTimeout: time.Minute * 2,
+// 		KeepAlive:      true,
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-func (q *quicTransport) Dial(addr string, opts ...DialOption) (Client, error) {
-	var options DialOptions
-	for _, o := range opts {
-		o(&options)
-	}
+// 	st, err := s.OpenStreamSync(context.TODO())
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	config := q.opts.TLSConfig
-	if config == nil {
-		config = &tls.Config{
-			InsecureSkipVerify: true,
-			NextProtos:         []string{"http/1.1"},
-		}
-	}
-	s, err := quic.DialAddr(addr, config, &quic.Config{
-		MaxIdleTimeout: time.Minute * 2,
-		KeepAlive:      true,
-	})
-	if err != nil {
-		return nil, err
-	}
+// 	enc := gob.NewEncoder(st)
+// 	dec := gob.NewDecoder(st)
 
-	st, err := s.OpenStreamSync(context.TODO())
-	if err != nil {
-		return nil, err
-	}
+// 	return &quicClient{
+// 		&quicSocket{
+// 			s:   s,
+// 			st:  st,
+// 			enc: enc,
+// 			dec: dec,
+// 		},
+// 		q,
+// 		options,
+// 	}, nil
+// }
 
-	enc := gob.NewEncoder(st)
-	dec := gob.NewDecoder(st)
+// func (q *quicTransport) Listen(addr string, opts ...ListenOption) (Listener, error) {
+// 	var options ListenOptions
+// 	for _, o := range opts {
+// 		o(&options)
+// 	}
 
-	return &quicClient{
-		&quicSocket{
-			s:   s,
-			st:  st,
-			enc: enc,
-			dec: dec,
-		},
-		q,
-		options,
-	}, nil
-}
+// 	config := q.opts.TLSConfig
+// 	if config == nil {
+// 		cfg, err := utls.Certificate(addr)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		config = &tls.Config{
+// 			Certificates: []tls.Certificate{cfg},
+// 			NextProtos:   []string{"http/1.1"},
+// 		}
+// 	}
 
-func (q *quicTransport) Listen(addr string, opts ...ListenOption) (Listener, error) {
-	var options ListenOptions
-	for _, o := range opts {
-		o(&options)
-	}
+// 	l, err := quic.ListenAddr(addr, config, &quic.Config{KeepAlive: true})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	config := q.opts.TLSConfig
-	if config == nil {
-		cfg, err := utls.Certificate(addr)
-		if err != nil {
-			return nil, err
-		}
-		config = &tls.Config{
-			Certificates: []tls.Certificate{cfg},
-			NextProtos:   []string{"http/1.1"},
-		}
-	}
+// 	return &quicListener{
+// 		l:    l,
+// 		t:    q,
+// 		opts: options,
+// 	}, nil
+// }
 
-	l, err := quic.ListenAddr(addr, config, &quic.Config{KeepAlive: true})
-	if err != nil {
-		return nil, err
-	}
+// func (q *quicTransport) String() string {
+// 	return "quic"
+// }
 
-	return &quicListener{
-		l:    l,
-		t:    q,
-		opts: options,
-	}, nil
-}
+// func NewQUICTransport(opts ...Option) Transport {
+// 	options := Options{}
 
-func (q *quicTransport) String() string {
-	return "quic"
-}
+// 	for _, o := range opts {
+// 		o(&options)
+// 	}
 
-func NewQUICTransport(opts ...Option) Transport {
-	options := Options{}
-
-	for _, o := range opts {
-		o(&options)
-	}
-
-	return &quicTransport{
-		opts: options,
-	}
-}
+// 	return &quicTransport{
+// 		opts: options,
+// 	}
+// }
