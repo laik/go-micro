@@ -141,6 +141,6 @@ func DefaultOptions() Options {
 		Id:        uuid.New().String(),
 		Address:   DefaultAddress,
 		Token:     DefaultToken,
-		Transport: transport.NewQUICTransport(),
+		Transport: transport.NewMemoryTransport(), //
 	}
 }
